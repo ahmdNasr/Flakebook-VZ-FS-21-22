@@ -76,5 +76,5 @@ app.use((_, res) => {
     res.render("pages/notFound")
 })
 
-const PORT = 3141
+const PORT = process.env.PORT || 3141
 app.listen(PORT, () => console.log('Listening on Port:', PORT))
