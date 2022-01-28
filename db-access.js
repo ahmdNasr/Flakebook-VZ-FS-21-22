@@ -1,48 +1,73 @@
 const { MongoClient } = require("mongodb")
 
-let db; // Design Pattern = Singleton
+let _db; // Design Pattern = Singleton
 
-function connectToDB() {
-    if(typeof db === "undefined") {
-        const url = process.env.DB_URL;
-        const client = new MongoClient(url)
-
-        client
-        .connect()
-        .then((connected_client) => {
-            db = connected_client.db('myFirstDatabase');
-        })
-    }
+function _getDb() {   // "resolve",   "reject"
+    return new Promise((resolveDB, rejectWithErr) => {
+        if(_db) {
+            // hier ist die datenbank verbindung schon aufrecht
+            // ich kann direkt die Promise von oben resolven...
+            // ich muss keine weitere verbindung aufbauen...
+            resolveDB(_db);
+        } else {
+            const url = process.env.DB_URL;
+            const client = new MongoClient(url)
+    
+            client
+            .connect()
+            .then((connected_client) => {
+                _db = connected_client.db('myFirstDatabase');
+                resolveDB(_db)
+            })
+            .catch((err) => rejectWithErr(err))
+        }
+    })
 }
 
 function getAllUsers() {
-    return db.collection('users')
-    .find() // no find query because want all
-    .toArray() // turn FindCursor into array to get data
+    return _getDb()
+    .then((db) => {
+        const frageDieDatenbankPromiseNachAllenUsern = db.collection('users')
+        .find() // no find query because want all
+        .toArray() // turn FindCursor into array to get data
+    
+        return frageDieDatenbankPromiseNachAllenUsern
+    })
 }
 
+/*
+return db.collection('users')
+    .find() // no find query because want all
+    .toArray() // turn FindCursor into array to get data
+*/
+
 function getUserByUsername (username) {
-    return db.collection('users')
-    .findOne({ username })
+    return _getDb()
+    .then((db) => db.collection('users').findOne({ username }))
 }
 
 function userNameOrEmailExists(username, email) {
-    return db.collection('users')
-    .findOne({ 
-        $or: [
-            { username: username },
-            { email:  email },
-        ]
+    return _getDb()
+    .then((db) => {
+        return db.collection('users')
+        .findOne({ 
+            $or: [
+                { username: username },
+                { email:  email },
+            ]
+        })
     })
 }
 
 function createNewUser (user) {
-    return db.collection('users')
-    .insertOne(user)
+    return _getDb()
+    .then((db) => {
+        return db.collection('users')
+        .insertOne(user)
+    })
 }
 
 module.exports = {
-    connectToDB,
     getAllUsers,
     getUserByUsername,
     userNameOrEmailExists,

@@ -3,7 +3,6 @@ const formidable = require('formidable')
 const dotenv = require("dotenv")
 
 const {
-    connectToDB,
     getAllUsers,
     getUserByUsername,
     userNameOrEmailExists,
@@ -11,7 +10,8 @@ const {
 } = require("./db-access.js")
 
 dotenv.config()
-connectToDB()
+
+console.log(getAllUsers())
 
 // Express
 const app = express()
@@ -20,10 +20,21 @@ app.set('view engine', 'ejs')
 app.use(express.static(__dirname + '/public'))
 
 app.get('/', (req, res) => {     
-    getAllUsers()
+    const allUsersPromise = getAllUsers()
+
+    allUsersPromise
     .then((userArray) => {
+        //console.log("versprechen Zeile 27", allUsersPromise)
         res.render('pages/home', { userArray })
     })
+    .catch((err) => {
+        console.log("promise wurde zwar eingehalten, aber ein fehler ist entstanden:", err)
+    })
+    .finally(() => {
+        console.log("egal ob die promise resolved (.then), oder rejected (.catch) wird, das finally wird immer danach ausgeführt...")
+    })
+
+    //console.log("versprechen Zeile 31", allUsersPromise)
 })
 
 app.get('/user/:username', (req, res) => {
