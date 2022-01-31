@@ -2,16 +2,12 @@ const express = require('express')
 const formidable = require('formidable')
 const dotenv = require("dotenv")
 
-const {
-    getAllUsers,
-    getUserByUsername,
-    userNameOrEmailExists,
-    createNewUser
-} = require("./db-access.js")
+// import services/use-cases ....
+const listAllUsersService = require('./use-cases/list-all-users.js')
+const listOneUserService = require('./use-cases/list-one-user.js')
+const createNewUserService = require('./use-cases/create-new-user.js')
 
 dotenv.config()
-
-console.log(getAllUsers())
 
 // Express
 const app = express()
@@ -19,34 +15,25 @@ const app = express()
 app.set('view engine', 'ejs')
 app.use(express.static(__dirname + '/public'))
 
-app.get('/', (req, res) => {     
-    const allUsersPromise = getAllUsers()
-
-    allUsersPromise
+app.get('/', function getAllUsersController(req, res) {     
+    listAllUsersService()
     .then((userArray) => {
+        console.log(userArray)
         //console.log("versprechen Zeile 27", allUsersPromise)
         res.render('pages/home', { userArray })
     })
-    .catch((err) => {
-        console.log("promise wurde zwar eingehalten, aber ein fehler ist entstanden:", err)
-    })
-    .finally(() => {
-        console.log("egal ob die promise resolved (.then), oder rejected (.catch) wird, das finally wird immer danach ausgeführt...")
-    })
-
-    //console.log("versprechen Zeile 31", allUsersPromise)
 })
 
-app.get('/user/:username', (req, res) => {
+app.get('/user/:username', function getUserController(req, res) {
     const username = req.params.username
     
-    getUserByUsername(username)
+    listOneUserService({ username })
     .then((user) => {
         res.render('pages/user', { user })
     })
 })
 
-app.post('/user', (req, res) => {
+app.post('/user', function postUserController(req, res) {
     //input auslesen mit formidable
     const form = formidable({ multiples: true, uploadDir: 'public/uploads' });
     form.parse(req, (err, fields, files) => {
@@ -54,29 +41,24 @@ app.post('/user', (req, res) => {
             res.render('pages/notFound')
             return;
         }
-        //User anlegen, 
-        const user = {
+
+        const userInfo = {
             username: fields.username,
             email: fields.email,
             image: files.image.newFilename
         }
 
         //username und email soll unique sein
-        userNameOrEmailExists(user.username, user.email)
-        .then((foundUser) => {
-            if (foundUser) {
-                res.render('pages/errorPage')
-            } else {
-                createNewUser(user)
-                .then(() => {
-                    res.redirect('/') //hier wird nur auf die Route verwiesen, Daten müssen nicht mit-> werden in get('/') übergeben
-                })
-            }
+        createNewUserService(userInfo)
+        .then(() => res.redirect('/')) //hier wird nur auf die Route verwiesen, Daten müssen nicht mit-> werden in get('/') übergeben
+        .catch((err) => {
+            console.log("about to render errorPage", err);
+            res.render('pages/errorPage')
         })
     });
 })
 
-app.use((_, res) => {
+app.use(function notFoundController(_, res) {
     res.render("pages/notFound")
 })
 
