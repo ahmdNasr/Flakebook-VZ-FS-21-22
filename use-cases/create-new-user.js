@@ -1,20 +1,16 @@
 const makeUser = require("../domain/user.js")
-const UserDAO = require("../db-access/user-dao.js")
+const { userNameOrEmailExists, createNewUser } = require("../db-access/user-dao.js")
 
-function createNewUserService(userInfo) {
-    return new Promise((resolve, reject) => {
-        const user = makeUser(userInfo) // validate input using makeUser // normalerweise macht das die facade...
+async function createNewUserService(userInfo) {
+    const user = makeUser(userInfo) // validate input using makeUser // normalerweise macht das die facade...
 
-        UserDAO.userNameOrEmailExists(user.username, user.email)
-        .then((foundUser) => {
-            if (foundUser) {
-                reject()
-            } else {
-                UserDAO.createNewUser(user)
-                .then((createdUser) => resolve(createdUser))
-            }
-        }).catch((err) => console.log(err))
-    })
+    const foundUser = await userNameOrEmailExists(user.username, user.email)   
+    if (foundUser) {
+        throw new Error("No User Found")
+    } else {
+        const createdUser = await createNewUser(user)
+        return createdUser
+    }
 }
 
 module.exports = createNewUserService

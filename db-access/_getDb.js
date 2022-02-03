@@ -2,26 +2,21 @@ const { MongoClient } = require("mongodb")
 
 let _db; // Design Pattern = Singleton
 
-function _getDb() {   // "resolve",   "reject"
-    return new Promise((resolveDB, rejectWithErr) => {
-        if(_db) {
-            // hier ist die datenbank verbindung schon aufrecht
-            // ich kann direkt die Promise von oben resolven...
-            // ich muss keine weitere verbindung aufbauen...
-            resolveDB(_db);
-        } else {
-            const url = process.env.DB_URL;
-            const client = new MongoClient(url)
+async function _getDb() {   // "resolve",   "reject"
+    if(_db) {
+        // hier ist die datenbank verbindung schon aufrecht
+        // ich kann direkt die Promise von oben resolven...
+        // ich muss keine weitere verbindung aufbauen...
+        return _db;
+    } else {
+        const url = process.env.DB_URL;
+        const client = new MongoClient(url)
+
+        const connected_client = await client.connect()
+        _db = connected_client.db('myFirstDatabase');
     
-            client
-            .connect()
-            .then((connected_client) => {
-                _db = connected_client.db('myFirstDatabase');
-                resolveDB(_db)
-            })
-            .catch((err) => rejectWithErr(err))
-        }
-    })
+        return _db
+    }
 }
 
 module.exports = { _getDb }

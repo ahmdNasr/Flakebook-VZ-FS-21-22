@@ -1,14 +1,13 @@
 const { _getDb } = require("./_getDb")
 
-function getAllUsers() {
-    return _getDb()
-    .then((db) => {
-        const frageDieDatenbankPromiseNachAllenUsern = db.collection('users')
-        .find() // no find query because want all
-        .toArray() // turn FindCursor into array to get data
+async function getAllUsers() {
+    const db = await _getDb()
     
-        return frageDieDatenbankPromiseNachAllenUsern
-    })
+    const userArray = await db.collection('users')
+    .find() // no find query because want all
+    .toArray() // turn FindCursor into array to get data
+
+    return userArray
 }
 
 /*
@@ -17,30 +16,27 @@ return db.collection('users')
     .toArray() // turn FindCursor into array to get data
 */
 
-function getUserByUsername (username) {
-    return _getDb()
-    .then((db) => db.collection('users').findOne({ username }))
+async function getUserByUsername (username) {
+    const db = await _getDb()
+    const foundUser = await db.collection('users').findOne({ username })
+    return foundUser
 }
 
-function userNameOrEmailExists(username, email) {
-    return _getDb()
-    .then((db) => {
-        return db.collection('users')
-        .findOne({ 
-            $or: [
-                { username: username },
-                { email:  email },
-            ]
-        })
+async function userNameOrEmailExists(username, email) {
+    const db = await _getDb()
+    const user = await db.collection('users').findOne({ 
+        $or: [
+            { username: username },
+            { email:  email },
+        ]
     })
+    return user
 }
 
-function createNewUser (user) {
-    return _getDb()
-    .then((db) => {
-        return db.collection('users')
-        .insertOne(user)
-    })
+async function createNewUser (user) {
+    const db = await _getDb()
+    const createdUser = await db.collection('users').insertOne(user)
+    return createdUser
 }
 
 module.exports = {

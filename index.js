@@ -17,10 +17,10 @@ app.use(express.static(__dirname + '/public'))
 
 app.get('/', function getAllUsersController(req, res) {     
     listAllUsersService()
-    .then((userArray) => {
-        console.log(userArray)
+    .then((usersView) => {
+        console.log(usersView)
         //console.log("versprechen Zeile 27", allUsersPromise)
-        res.render('pages/home', { userArray })
+        res.render('pages/home', { userArray: usersView })
     })
 })
 
